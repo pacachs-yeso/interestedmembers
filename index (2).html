@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Z.E.R.O. | Pacac High School</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        eco: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            200: '#bbf7d0',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="h-full font-sans text-slate-800 antialiased flex flex-col justify-between">
+
+    <!-- App Container -->
+    <div id="app" class="flex flex-col min-h-full">
+        <!-- Header -->
+        <header class="bg-eco-800 text-white shadow-md sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                <div class="flex items-center space-x-3 cursor-pointer" onclick="router.navigate('home')">
+                    <div class="bg-eco-600 p-2 rounded-lg text-white shadow-inner">
+                        <i class="fa-solid fa-leaf text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg tracking-wide leading-tight">Project Z.E.R.O.</h1>
+                        <p class="text-xs text-eco-200">Pacac High School Environmental Monitoring</p>
+                    </div>
+                </div>
+                <div id="header-nav" class="flex items-center space-x-4">
+                    <button onclick="router.navigate('home')" class="text-sm font-medium hover:text-eco-200 transition">Public Results</button>
+                    <div id="auth-nav-btn">
+                        <button onclick="auth.openLoginModal()" class="bg-eco-600 hover:bg-eco-500 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow transition flex items-center space-x-2">
+                            <i class="fa-solid fa-right-to-bracket"></i>
+                            <span>Login</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Viewport -->
+        <main id="main-content" class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <!-- Dynamic Content Injected Here -->
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-slate-800 text-slate-400 py-6 border-t border-slate-700">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs space-y-3 sm:space-y-0">
+                <p>&copy; 2026 Pacac High School. Project Z.E.R.O. All rights reserved.</p>
+                <div class="flex space-x-4">
+                    <span class="hover:text-white cursor-pointer" onclick="router.navigate('home')">Public Portal</span>
+                    <span class="hover:text-white cursor-pointer" onclick="auth.openLoginModal()">System Login</span>
+                    <span class="hover:text-white cursor-pointer" onclick="app.showSystemInfo()">System Info</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative animate-fade-in">
+            <button onclick="auth.closeLoginModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="text-center mb-6">
+                <div class="inline-flex bg-eco-100 text-eco-700 p-3 rounded-full mb-2">
+                    <i class="fa-solid fa-shield-halved text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900">Authorized Access Only</h3>
+                <p class="text-xs text-slate-500 mt-1">Only authorized registered accounts are allowed to access protected Project Z.E.R.O. functions.</p>
+            </div>
+            <form id="login-form" onsubmit="auth.handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Registered Name</label>
+                    <input type="text" id="login-username" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-eco-500" placeholder="Juan Dela Cruz">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Password</label>
+                    <input type="password" id="login-password" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-eco-500" placeholder="Enter your password">
+                </div>
+                <div id="login-error" class="text-red-600 text-xs hidden bg-red-50 p-2 rounded-lg border border-red-200"></div>
+                <button type="submit" class="w-full bg-eco-600 hover:bg-eco-700 text-white font-semibold py-2.5 rounded-lg text-sm shadow transition">
+                    Secure Login
+                </button>
+            </form>
+            <div class="mt-6 border-t pt-4 text-center">
+                <p class="text-xs text-slate-400">Pacac High School Digital Monitoring Infrastructure</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2"></div>
+
+    <!-- Core App Script -->
+    <script>
+        // --- DATABASE & STORAGE ARCHITECTURE ---
+        const DB_KEY = "project_zero_phs_db_v4";
+
+        const DEFAULT_SECTIONS = [
+            { id: "sec_7_spict", name: "7 SP-ICT", grade: 7 },
+            { id: "sec_7_delmundo", name: "7 Del Mundo", grade: 7 },
+            { id: "sec_7_santos", name: "7 Santos", grade: 7 },
+            { id: "sec_8_spict", name: "8 SP-ICT", grade: 8 },
+            { id: "sec_8_agoncillo", name: "8 Agoncillo", grade: 8 },
+            { id: "sec_8_zaide", name: "8 Zaide", grade: 8 },
+            { id: "sec_9_spict", name: "9 SP-ICT", grade: 9 },
+            { id: "sec_9_euclid", name: "9 Euclid", grade: 9 },
+            { id: "sec_9_pythagoras", name: "9 Pythagoras", grade: 9 },
+            { id: "sec_10_spict", name: "10 SP-ICT", grade: 10 },
+            { id: "sec_10_becquerel", name: "10 Becquerel", grade: 10 },
+            { id: "sec_11_amorsolo", name: "11 Amorsolo", grade: 11 },
+            { id: "sec_11_abueva", name: "11 Abueva", grade: 11 },
+            { id: "sec_12_hernandez", name: "12 Hernandez", grade: 12 },
+            { id: "sec_12_balagtas", name: "12 Balagtas", grade: 12 }
+        ];
+
+        const DEFAULT_USERS = [
+            { id: "usr_admin", name: "PHS Admin", pass: "306810PHSYESO", role: "admin", sectionId: null, judgeSections: [], status: "active" },
+            { id: "usr_jmg", name: "Jhon Mark Gamino", pass: "JMG306810_1", role: "teacher", sectionId: "shs_all", judgeSections: ["sec_11_amorsolo", "sec_11_abueva", "sec_12_hernandez", "sec_12_balagtas"], isJudge: true, status: "active" },
+            { id: "usr_jg", name: "Jolibe Gallano", pass: "JG306810_2", role: "teacher", sectionId: "sec_10_becquerel", judgeSections: [], isJudge: false, status: "active" },
+            { id: "usr_ama", name: "Aileen Mae Abon", pass: "AMA306810_3", role: "teacher", sectionId: "sec_10_spict", judgeSections: [], isJudge: false, status: "active" },
+            { id: "usr_ap", name: "Amalia Pariñas", pass: "AP306810_4", role: "teacher", sectionId: "sec_9_spict", judgeSections: [], isJudge: false, status: "active" },
+            { id: "usr_ac", name: "Amelyn Castro", pass: "AC306810_5", role: "teacher", sectionId: "sec_9_euclid", judgeSections: [], isJudge: false, status: "active" },
+            { id: "usr_nkc", name: "Norman Kristoffer Cruz", pass: "NKC306810_6", role: "teacher", sectionId: "sec_9_pythagoras", judgeSections: [], isJudge: false, status: "active" },
+            { id: "usr_aljkg", name: "Al John Kiel Garampil", pass: "ALJKGG306810_7", role: "teacher", sectionId: "sec_8_spict", judgeSections: [], isJudge: false, status: "active" },
+            { id: "usr_vl", name: "Virginia Liwanag", pass: "VL306810_8", role: "teacher", sectionId: "sec_8_zaide", judgeSections: [], isJudge: false, status: "active" },
+            { id: "usr_rc", name: "Rayan Castro", pass: "RC306810_9", role: "teacher", sectionId: "sec_8_agoncillo", judgeSections: [], isJudge: false, status: "active" },
+            { id: "usr_va", name: "Vanessa Acapuyan", pass: "VA306810_10", role: "teacher", sectionId: "sec_7_spict", judgeSections: [], isJudge: false, status: "active" },
+            { id: "usr_pg", name: "Paulino Guling", pass: "PG306810_11", role: "teacher", sectionId: "sec_7_delmundo", judgeSections: [], isJudge: false, status: "active" },
+            { id: "usr_rb", name: "Roselle Bumagat", pass: "RB306810_12", role: "teacher", sectionId: "sec_7_santos", judgeSections: [], isJudge: false, status: "active" }
+        ];
+
+        class Database {
+            constructor() {
+                this.init();
+            }
+
+            init() {
+                const existing = localStorage.getItem(DB_KEY);
+                if (!existing) {
+                    const initialData = {
+                        users: DEFAULT_USERS,
+                        sections: DEFAULT_SECTIONS,
+                        records: [], 
+                        weeklyResults: [], 
+                        monthlyResults: [], 
+                        auditLogs: [],
+                        config: { maxScores: { paper: 20, bottle: 20, cleanliness: 20, organization: 20, labeling: 20 } }
+                    };
+                    localStorage.setItem(DB_KEY, JSON.stringify(initialData));
+                    this.logSystem("System Initialized with Secure Authentication Database.");
+                } else {
+                    const data = JSON.parse(existing);
+                    DEFAULT_USERS.forEach(defUser => {
+                        if (!data.users.some(u => u.id === defUser.id)) {
+                            data.users.push(defUser);
+                        }
+                    });
+                    localStorage.setItem(DB_KEY, JSON.stringify(data));
+                }
+            }
+
+            get() {
+                return JSON.parse(localStorage.getItem(DB_KEY));
+            }
+
+            save(data) {
+                localStorage.setItem(DB_KEY, JSON.stringify(data));
+            }
+
+            logSystem(action, actor = "System", details = "") {
+                const db = this.get();
+                db.auditLogs.unshift({
+                    id: 'log_' + Date.now() + Math.random().toString(36).substr(2, 5),
+                    timestamp: new Date().toISOString(),
+                    actor,
+                    action,
+                    details
+                });
+                this.save(db);
+            }
+        }
+
+        const db = new Database();
+
+        // --- AUTHENTICATION & SESSION MANAGEMENT ---
+        const auth = {
+            currentUser: null,
+
+            initSession() {
+                const session = sessionStorage.getItem("phs_zero_session");
+                if (session) {
+                    this.currentUser = JSON.parse(session);
+                    this.updateHeaderAuth();
+                }
+            },
+
+            openLoginModal() {
+                document.getElementById('login-modal').classList.remove('hidden');
+                document.getElementById('login-error').classList.add('hidden');
+                document.getElementById('login-form').reset();
+            },
+
+            closeLoginModal() {
+                document.getElementById('login-modal').classList.add('hidden');
+            },
+
+            handleLogin(e) {
+                e.preventDefault();
+                const nameInput = document.getElementById('login-username').value.trim();
+                const passInput = document.getElementById('login-password').value;
+                const currentDb = db.get();
+
+                const user = currentDb.users.find(u => u.name.toLowerCase() === nameInput.toLowerCase() && u.pass === passInput);
+
+                if (user) {
+                    if (user.status === 'inactive') {
+                        document.getElementById('login-error').innerText = "Account is deactivated. Contact PHS Admin.";
+                        document.getElementById('login-error').classList.remove('hidden');
+                        return;
+                    }
+                    this.currentUser = user;
+                    sessionStorage.setItem("phs_zero_session", JSON.stringify(user));
+                    db.logSystem(`Successful Login`, user.name, `Role: ${user.role}, Assigned Section: ${user.sectionId || 'None'}`);
+                    this.closeLoginModal();
+                    this.updateHeaderAuth();
+                    app.loadDashboard();
+                    app.showToast(`Welcome back, ${user.name}!`, 'success');
+                } else {
+                    db.logSystem(`Failed Login Attempt`, nameInput, `Invalid credentials or unregistered account`);
+                    document.getElementById('login-error').innerText = "Authentication failed: Unregistered name or incorrect password. Only authorized registered accounts are allowed.";
+                    document.getElementById('login-error').classList.remove('hidden');
+                }
+            },
+
+            logout() {
+                if (this.currentUser) {
+                    db.logSystem(`Logout`, this.currentUser.name);
+                }
+                this.currentUser = null;
+                sessionStorage.removeItem("phs_zero_session");
+                this.updateHeaderAuth();
+                router.navigate('home');
+                app.showToast('Logged out securely.', 'info');
+            },
+
+            updateHeaderAuth() {
+                const navBtn = document.getElementById('auth-nav-btn');
+                if (this.currentUser) {
+                    navBtn.innerHTML = `
+                        <div class="flex items-center space-x-3">
+                            <span class="text-xs font-medium bg-eco-700 px-2.5 py-1 rounded-full text-eco-100 hidden sm:inline"><i class="fa-solid fa-user-shield mr-1"></i>${this.currentUser.name}</span>
+                            <button onclick="router.navigate('dashboard')" class="bg-eco-600 hover:bg-eco-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow">Dashboard</button>
+                            <button onclick="auth.logout()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow"><i class="fa-solid fa-power-off"></i></button>
+                        </div>
+                    `;
+                } else {
+                    navBtn.innerHTML = `
+                        <button onclick="auth.openLoginModal()" class="bg-eco-600 hover:bg-eco-500 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow transition flex items-center space-x-2">
+                            <i class="fa-solid fa-right-to-bracket"></i>
+                            <span>Login</span>
+                        </button>
+                    `;
+                }
+            }
+        };
+
+        // --- ROUTER & VIEW CONTROLLER ---
+        const router = {
+            navigate(view, param = null) {
+                const content = document.getElementById('main-content');
+                window.scrollTo(0,0);
+                
+                if (view === 'home') {
+                    app.renderPublicHome(content);
+                } else if (view === 'dashboard') {
+                    if (!auth.currentUser) {
+                        auth.openLoginModal();
+                        return;
+                    }
+                    app.renderDashboard(content);
+                } else if (view === 'scoring') {
+                    if (!auth.currentUser) { auth.openLoginModal(); return; }
+                    app.renderScoringForm(content, param);
+                } else if (view === 'history') {
+                    if (!auth.currentUser) { auth.openLoginModal(); return; }
+                    app.renderHistory(content);
+                } else {
+                    app.renderPublicHome(content);
+                }
+            }
+        };
+
+        // --- APPLICATION LOGIC & UI COMPONENTS ---
+        const app = {
+            loadDashboard() {
+                router.navigate('dashboard');
+            },
+
+            showToast(message, type = 'success') {
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                const bg = type === 'success' ? 'bg-eco-700 text-white' : type === 'error' ? 'bg-red-600 text-white' : 'bg-slate-800 text-white';
+                toast.className = `${bg} px-4 py-3 rounded-xl shadow-lg text-xs font-medium flex items-center space-x-2 transform translate-y-2 opacity-0 transition-all duration-300`;
+                toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-info'}"></i><span>${message}</span>`;
+                container.appendChild(toast);
+                setTimeout(() => { toast.classList.remove('translate-y-2', 'opacity-0'); }, 50);
+                setTimeout(() => {
+                    toast.classList.add('translate-y-2', 'opacity-0');
+                    setTimeout(() => toast.remove(), 300);
+                }, 3500);
+            },
+
+            showSystemInfo() {
+                alert("Project Z.E.R.O. - Pacac High School Digital Classroom Cleanliness, Waste Segregation, Organization, and Environmental Monitoring System. Version 1.3.");
+            },
+
+            renderPublicHome(container) {
+                const currentDb = db.get();
+                const publishedWeeks = currentDb.weeklyResults.filter(w => w.published);
+                const publishedMonths = currentDb.monthlyResults.filter(m => m.published);
+
+                container.innerHTML = `
+                    <div class="space-y-8 animate-fade-in">
+                        <!-- Hero Banner -->
+                        <div class="bg-gradient-to-r from-eco-800 to-eco-600 rounded-3xl p-8 text-white shadow-xl flex flex-col md:flex-row items-center justify-between">
+                            <div class="space-y-4 max-w-2xl mb-6 md:mb-0">
+                                <span class="bg-eco-500/30 text-eco-100 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">Pacac High School Official Portal</span>
+                                <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight">Project Z.E.R.O. Environmental Monitoring</h2>
+                                <p class="text-eco-100 text-sm leading-relaxed">Promoting digital classroom cleanliness, waste segregation, organization, and environmental stewardship across all grade levels from September 2026 to March 2027.</p>
+                                ${!auth.currentUser ? `<button onclick="auth.openLoginModal()" class="bg-white text-eco-800 hover:bg-eco-50 font-bold px-6 py-2.5 rounded-xl text-sm shadow transition inline-flex items-center space-x-2"><i class="fa-solid fa-user-lock"></i><span>Teacher & Admin Portal Login</span></button>` : `<button onclick="router.navigate('dashboard')" class="bg-white text-eco-800 hover:bg-eco-50 font-bold px-6 py-2.5 rounded-xl text-sm shadow transition inline-flex items-center space-x-2"><i class="fa-solid fa-gauge"></i><span>Go to My Dashboard</span></button>`}
+                            </div>
+                            <div class="bg-white/10 p-6 rounded-2xl backdrop-blur-md border border-white/20 text-center">
+                                <i class="fa-solid fa-earth-asia text-5xl text-eco-200 mb-2"></i>
+                                <div class="text-2xl font-bold">15 Sections</div>
+                                <div class="text-xs text-eco-200">Actively Monitored by 12 Registered Teachers</div>
+                            </div>
+                        </div>
+
+                        <!-- Published Weekly & Monthly Results -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <!-- Weekly Results -->
+                            <div class="bg-white rounded-2xl shadow-md border border-slate-200 p-6">
+                                <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center"><i class="fa-solid fa-calendar-week text-eco-600 mr-2"></i><span>Published Weekly Results</span></h3>
+                                ${publishedWeeks.length === 0 ? `
+                                    <div class="text-center py-10 text-slate-400 text-xs">No weekly results published yet by PHS Admin.</div>
+                                ` : `
+                                    <div class="overflow-x-auto">
+                                        <table class="w-full text-left text-xs">
+                                            <thead>
+                                                <tr class="border-b bg-slate-50 text-slate-600 font-semibold">
+                                                    <th class="p-3">Section</th>
+                                                    <th class="p-3">Week</th>
+                                                    <th class="p-3">Score</th>
+                                                    <th class="p-3">Percentage</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-slate-100">
+                                                ${publishedWeeks.map(w => `
+                                                    <tr>
+                                                        <td class="p-3 font-medium text-slate-900">${w.sectionName}</td>
+                                                        <td class="p-3 text-slate-600">Week ${w.weekNumber}</td>
+                                                        <td class="p-3 text-slate-600">${w.totalScore} / ${w.maxScore}</td>
+                                                        <td class="p-3 font-bold text-eco-700">${w.percentage}%</td>
+                                                    </tr>
+                                                `).join('')}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                `}
+                            </div>
+
+                            <!-- Monthly Rankings -->
+                            <div class="bg-white rounded-2xl shadow-md border border-slate-200 p-6">
+                                <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center"><i class="fa-solid fa-trophy text-amber-500 mr-2"></i><span>Monthly Rankings & Awards</span></h3>
+                                ${publishedMonths.length === 0 ? `
+                                    <div class="text-center py-10 text-slate-400 text-xs">No monthly rankings published yet by PHS Admin.</div>
+                                ` : `
+                                    <div class="overflow-x-auto">
+                                        <table class="w-full text-left text-xs">
+                                            <thead>
+                                                <tr class="border-b bg-slate-50 text-slate-600 font-semibold">
+                                                    <th class="p-3">Rank</th>
+                                                    <th class="p-3">Month</th>
+                                                    <th class="p-3">Section</th>
+                                                    <th class="p-3">Percentage</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-slate-100">
+                                                ${publishedMonths.map(m => `
+                                                    <tr>
+                                                        <td class="p-3 font-bold text-slate-900">#${m.rank || 1}</td>
+                                                        <td class="p-3 text-slate-600">${m.monthName}</td>
+                                                        <td class="p-3 font-medium text-slate-900">${m.sectionName}</td>
+                                                        <td class="p-3 font-bold text-eco-700">${m.percentage}%</td>
+                                                    </tr>
+                                                `).join('')}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderDashboard(container) {
+                const user = auth.currentUser;
+                if (!user) { router.navigate('home'); return; }
+
+                if (user.role === 'admin') {
+                    this.renderAdminDashboard(container);
+                } else if (user.role === 'teacher') {
+                    this.renderTeacherDashboard(container);
+                }
+            },
+
+            renderTeacherDashboard(container) {
+                const user = auth.currentUser;
+                const currentDb = db.get();
+                const todayStr = new Date().toISOString().split('T')[0];
+
+                let assignedSectionsList = [];
+                if (user.sectionId === 'shs_all') {
+                    assignedSectionsList = currentDb.sections.filter(s => s.grade === 11 || s.grade === 12);
+                } else {
+                    const sec = currentDb.sections.find(s => s.id === user.sectionId);
+                    if (sec) assignedSectionsList.push(sec);
+                }
+
+                container.innerHTML = `
+                    <div class="space-y-6 animate-fade-in">
+                        <!-- Teacher Info Card -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                                <span class="bg-eco-100 text-eco-800 text-xs font-semibold px-2.5 py-1 rounded-full"><i class="fa-solid fa-chalkboard-user mr-1"></i>Subject Teacher Portal</span>
+                                <h2 class="text-2xl font-bold text-slate-900 mt-2">${user.name}</h2>
+                                <p class="text-xs text-slate-500 mt-0.5">Primary Assigned Section: <span class="font-semibold text-slate-700">${user.sectionId === 'shs_all' ? 'Senior High School (SHS Coordinator)' : assignedSectionsList.map(s=>s.name).join(', ')}</span></p>
+                                ${user.isJudge ? `<p class="text-xs text-amber-600 font-semibold mt-1"><i class="fa-solid fa-gavel mr-1"></i>Special Judging Permission: Grade 11 & Grade 12 Sections (11 Amorsolo, 11 Abueva, 12 Hernandez, 12 Balagtas)</p>` : ''}
+                            </div>
+                            <div class="flex space-x-3">
+                                <button onclick="router.navigate('history')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-xs font-semibold transition"><i class="fa-solid fa-clock-rotate-left mr-1.5"></i>Monitoring History</button>
+                            </div>
+                        </div>
+
+                        <!-- Daily Scoring Section -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                            <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center"><i class="fa-solid fa-pen-to-square text-eco-600 mr-2"></i><span>Daily Monitoring Submission (${todayStr})</span></h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                ${assignedSectionsList.map(sec => {
+                                    if (user.sectionId !== 'shs_all' && user.sectionId !== sec.id) return '';
+                                    const alreadySubmitted = currentDb.records.some(r => r.sectionId === sec.id && r.date === todayStr && r.submitterId === user.id && !r.isJudgeRecord);
+                                    return `
+                                        <div class="border border-slate-200 rounded-xl p-4 flex flex-col justify-between bg-slate-50">
+                                            <div>
+                                                <h4 class="font-bold text-slate-900 text-sm">${sec.name}</h4>
+                                                <p class="text-xs text-slate-500 mt-1">Grade ${sec.grade} Monitoring</p>
+                                            </div>
+                                            <div class="mt-4 pt-3 border-t border-slate-200 flex items-center justify-between">
+                                                ${alreadySubmitted ? `
+                                                    <span class="text-xs font-semibold text-eco-700 bg-eco-100 px-2 py-1 rounded"><i class="fa-solid fa-check mr-1"></i>Submitted Today</span>
+                                                    <button onclick="app.openScoringModal('${sec.id}', '${sec.name}')" class="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-3 py-1.5 rounded-lg transition">Edit Entry</button>
+                                                ` : `
+                                                    <span class="text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-1 rounded"><i class="fa-solid fa-clock mr-1"></i>Pending</span>
+                                                    <button onclick="app.openScoringModal('${sec.id}', '${sec.name}')" class="bg-eco-600 hover:bg-eco-700 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow transition"><i class="fa-solid fa-plus mr-1"></i>Submit Score</button>
+                                                `}
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Judge Section (If Applicable) -->
+                        ${user.isJudge ? `
+                            <div class="bg-white rounded-2xl shadow-sm border border-amber-200 p-6">
+                                <h3 class="text-lg font-bold text-amber-900 mb-4 flex items-center"><i class="fa-solid fa-gavel text-amber-600 mr-2"></i><span>Judge SHS Evaluation (11 Amorsolo, 11 Abueva, 12 Hernandez, 12 Balagtas)</span></h3>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    ${currentDb.sections.filter(s => user.judgeSections.includes(s.id)).map(sec => {
+                                        const alreadySubmitted = currentDb.records.some(r => r.sectionId === sec.id && r.date === todayStr && r.submitterId === user.id && r.isJudgeRecord);
+                                        return `
+                                            <div class="border border-amber-200 rounded-xl p-4 flex flex-col justify-between bg-amber-50/50">
+                                                <div>
+                                                    <h4 class="font-bold text-slate-900 text-sm">${sec.name}</h4>
+                                                    <p class="text-xs text-slate-500 mt-1">SHS Official Judge Evaluation</p>
+                                                </div>
+                                                <div class="mt-4 pt-3 border-t border-amber-200 flex items-center justify-between">
+                                                    ${alreadySubmitted ? `
+                                                        <span class="text-xs font-semibold text-eco-700 bg-eco-100 px-2 py-1 rounded">Evaluated Today</span>
+                                                        <button onclick="app.openScoringModal('${sec.id}', '${sec.name}', true)" class="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-3 py-1.5 rounded-lg transition">Edit</button>
+                                                    ` : `
+                                                        <span class="text-xs font-semibold text-amber-700 bg-amber-100 px-2 py-1 rounded">Pending Evaluation</span>
+                                                        <button onclick="app.openScoringModal('${sec.id}', '${sec.name}', true)" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow transition"><i class="fa-solid fa-gavel mr-1"></i>Evaluate</button>
+                                                    `}
+                                                </div>
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <!-- Scoring Modal -->
+                    <div id="scoring-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+                        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 relative my-8">
+                            <button onclick="app.closeScoringModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                            <h3 id="scoring-modal-title" class="text-xl font-bold text-slate-900 mb-1">Daily Monitoring Score</h3>
+                            <p id="scoring-modal-subtitle" class="text-xs text-slate-500 mb-4"></p>
+                            <form id="scoring-form" onsubmit="app.submitScore(event)" class="space-y-4">
+                                <input type="hidden" id="form-section-id">
+                                <input type="hidden" id="form-is-judge" value="false">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Paper Waste Management & Proper Disposal (Max: 20)</label>
+                                    <input type="number" id="score-paper" min="0" max="20" required oninput="app.calculateModalTotal()" class="w-full px-3 py-2 border rounded-lg text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Bottle Waste & Segregation (Max: 20)</label>
+                                    <input type="number" id="score-bottle" min="0" max="20" required oninput="app.calculateModalTotal()" class="w-full px-3 py-2 border rounded-lg text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Classroom Cleanliness (Max: 20)</label>
+                                    <input type="number" id="score-cleanliness" min="0" max="20" required oninput="app.calculateModalTotal()" class="w-full px-3 py-2 border rounded-lg text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Room Organization (Max: 20)</label>
+                                    <input type="number" id="score-organization" min="0" max="20" required oninput="app.calculateModalTotal()" class="w-full px-3 py-2 border rounded-lg text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Proper Waste-Bin Labeling (Max: 20)</label>
+                                    <input type="number" id="score-labeling" min="0" max="20" required oninput="app.calculateModalTotal()" class="w-full px-3 py-2 border rounded-lg text-sm">
+                                </div>
+                                <div class="bg-slate-50 p-4 rounded-xl flex items-center justify-between border">
+                                    <div>
+                                        <div class="text-xs text-slate-500 font-medium">Calculated Total Score</div>
+                                        <div id="modal-total-display" class="text-xl font-extrabold text-slate-900">0 / 100</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-xs text-slate-500 font-medium">Percentage</div>
+                                        <div id="modal-percentage-display" class="text-xl font-extrabold text-eco-700">0%</div>
+                                    </div>
+                                </div>
+                                <button type="submit" class="w-full bg-eco-600 hover:bg-eco-700 text-white font-semibold py-2.5 rounded-lg text-sm shadow transition">Submit Daily Record</button>
+                            </form>
+                        </div>
+                    </div>
+                `;
+            },
+
+            openScoringModal(sectionId, sectionName, isJudge = false) {
+                const user = auth.currentUser;
+                if (!isJudge && user.sectionId !== 'shs_all' && user.sectionId !== sectionId) {
+                    alert("ACCESS DENIED: You are not authorized to submit scores for this section.");
+                    db.logSystem("Unauthorized Scoring Attempt Blocked", user.name, `Attempted section: ${sectionId}`);
+                    return;
+                }
+                if (isJudge && (!user.isJudge || !user.judgeSections.includes(sectionId))) {
+                    alert("ACCESS DENIED: You lack judging permissions for this section.");
+                    db.logSystem("Unauthorized Judge Evaluation Attempt Blocked", user.name, `Attempted section: ${sectionId}`);
+                    return;
+                }
+
+                document.getElementById('form-section-id').value = sectionId;
+                document.getElementById('form-is-judge').value = isJudge;
+                document.getElementById('scoring-modal-title').innerText = isJudge ? `Judge Evaluation: ${sectionName}` : `Daily Score: ${sectionName}`;
+                document.getElementById('scoring-modal-subtitle').innerText = `Monitoring Date: ${new Date().toISOString().split('T')[0]}`;
+                
+                const currentDb = db.get();
+                const todayStr = new Date().toISOString().split('T')[0];
+                const existing = currentDb.records.find(r => r.sectionId === sectionId && r.date === todayStr && r.submitterId === user.id && r.isJudgeRecord === isJudge);
+
+                if (existing) {
+                    document.getElementById('score-paper').value = existing.scores.paper;
+                    document.getElementById('score-bottle').value = existing.scores.bottle;
+                    document.getElementById('score-cleanliness').value = existing.scores.cleanliness;
+                    document.getElementById('score-organization').value = existing.scores.organization;
+                    document.getElementById('score-labeling').value = existing.scores.labeling;
+                } else {
+                    document.getElementById('scoring-form').reset();
+                }
+                this.calculateModalTotal();
+                document.getElementById('scoring-modal').classList.remove('hidden');
+            },
+
+            closeScoringModal() {
+                document.getElementById('scoring-modal').classList.add('hidden');
+            },
+
+            calculateModalTotal() {
+                const paper = parseInt(document.getElementById('score-paper').value) || 0;
+                const bottle = parseInt(document.getElementById('score-bottle').value) || 0;
+                const cleanliness = parseInt(document.getElementById('score-cleanliness').value) || 0;
+                const organization = parseInt(document.getElementById('score-organization').value) || 0;
+                const labeling = parseInt(document.getElementById('score-labeling').value) || 0;
+
+                const total = paper + bottle + cleanliness + organization + labeling;
+                const max = 100;
+                const percentage = Math.round((total / max) * 100);
+
+                document.getElementById('modal-total-display').innerText = `${total} / ${max}`;
+                document.getElementById('modal-percentage-display').innerText = `${percentage}%`;
+            },
+
+            submitScore(e) {
+                e.preventDefault();
+                const user = auth.currentUser;
+                const sectionId = document.getElementById('form-section-id').value;
+                const isJudge = document.getElementById('form-is-judge').value === 'true';
+                const todayStr = new Date().toISOString().split('T')[0];
+
+                if (!isJudge && user.sectionId !== 'shs_all' && user.sectionId !== sectionId) {
+                    alert("SECURITY ERROR: Submission rejected by backend access controller.");
+                    db.logSystem("Unauthorized Score Submission Rejected", user.name, `Section: ${sectionId}`);
+                    return;
+                }
+
+                const scores = {
+                    paper: parseInt(document.getElementById('score-paper').value),
+                    bottle: parseInt(document.getElementById('score-bottle').value),
+                    cleanliness: parseInt(document.getElementById('score-cleanliness').value),
+                    organization: parseInt(document.getElementById('score-organization').value),
+                    labeling: parseInt(document.getElementById('score-labeling').value)
+                };
+
+                const totalScore = scores.paper + scores.bottle + scores.cleanliness + scores.organization + scores.labeling;
+                const maxScore = 100;
+                const percentage = Math.round((totalScore / maxScore) * 100);
+
+                const currentDb = db.get();
+                const sec = currentDb.sections.find(s => s.id === sectionId);
+
+                const existingIndex = currentDb.records.findIndex(r => r.sectionId === sectionId && r.date === todayStr && r.submitterId === user.id && r.isJudgeRecord === isJudge);
+
+                const recordData = {
+                    id: existingIndex >= 0 ? currentDb.records[existingIndex].id : 'rec_' + Date.now() + Math.random().toString(36).substr(2, 4),
+                    submitterId: user.id,
+                    submitterName: user.name,
+                    role: user.role,
+                    isJudgeRecord: isJudge,
+                    sectionId: sec.id,
+                    sectionName: sec.name,
+                    date: todayStr,
+                    scores,
+                    totalScore,
+                    maxScore,
+                    percentage,
+                    timestamp: new Date().toISOString()
+                };
+
+                if (existingIndex >= 0) {
+                    currentDb.records[existingIndex] = recordData;
+                    db.logSystem('Score Corrected / Updated', user.name, `Section: ${sec.name}`);
+                } else {
+                    currentDb.records.unshift(recordData);
+                    db.logSystem('Daily Score Submitted', user.name, `Section: ${sec.name}, Total: ${totalScore}`);
+                }
+
+                db.save(currentDb);
+                this.closeScoringModal();
+                this.showToast('Score successfully saved to database!', 'success');
+                this.renderDashboard(document.getElementById('main-content'));
+            },
+
+            renderAdminDashboard(container) {
+                const currentDb = db.get();
+                container.innerHTML = `
+                    <div class="space-y-8 animate-fade-in">
+                        <!-- Admin Header -->
+                        <div class="bg-gradient-to-r from-slate-900 to-slate-800 rounded-3xl p-6 text-white shadow-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                                <span class="bg-eco-600 text-white text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">Administrator Control Panel</span>
+                                <h2 class="text-2xl font-bold mt-2">PHS Admin Dashboard</h2>
+                                <p class="text-xs text-slate-300 mt-1">Complete management of all 12 Subject Teachers, sections, weekly/monthly computations, publications, and audit logs.</p>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <button onclick="app.computeWeeklyResults()" class="bg-eco-600 hover:bg-eco-700 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow transition"><i class="fa-solid fa-calculator mr-1"></i>Compute Weekly Results</button>
+                                <button onclick="app.computeMonthlyResults()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow transition"><i class="fa-solid fa-award mr-1"></i>Compute Monthly Rankings</button>
+                            </div>
+                        </div>
+
+                        <!-- Stats Overview -->
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                                <div class="text-xs text-slate-500 font-medium">Registered Accounts</div>
+                                <div class="text-2xl font-bold text-slate-900 mt-1">${currentDb.users.length} (12 Teachers + Admin)</div>
+                            </div>
+                            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                                <div class="text-xs text-slate-500 font-medium">Total Sections</div>
+                                <div class="text-2xl font-bold text-slate-900 mt-1">${currentDb.sections.length}</div>
+                            </div>
+                            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                                <div class="text-xs text-slate-500 font-medium">Monitoring Records</div>
+                                <div class="text-2xl font-bold text-slate-900 mt-1">${currentDb.records.length}</div>
+                            </div>
+                            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                                <div class="text-xs text-slate-500 font-medium">Unpublished Weekly</div>
+                                <div class="text-2xl font-bold text-amber-600 mt-1">${currentDb.weeklyResults.filter(w=>!w.published).length}</div>
+                            </div>
+                        </div>
+
+                        <!-- Weekly Results Review & Publication -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                            <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center"><i class="fa-solid fa-calendar-week text-eco-600 mr-2"></i><span>Weekly Results Review & Publication</span></h3>
+                            ${currentDb.weeklyResults.length === 0 ? `
+                                <p class="text-xs text-slate-400 py-4">No weekly results computed yet. Click "Compute Weekly Results" above.</p>
+                            ` : `
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left text-xs">
+                                        <thead>
+                                            <tr class="border-b bg-slate-50 text-slate-600 font-semibold">
+                                                <th class="p-3">Section</th>
+                                                <th class="p-3">Week #</th>
+                                                <th class="p-3">Valid Records</th>
+                                                <th class="p-3">Score</th>
+                                                <th class="p-3">Percentage</th>
+                                                <th class="p-3">Status</th>
+                                                <th class="p-3 text-right">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-100">
+                                            ${currentDb.weeklyResults.map(w => `
+                                                <tr>
+                                                    <td class="p-3 font-medium text-slate-900">${w.sectionName}</td>
+                                                    <td class="p-3 text-slate-600">Week ${w.weekNumber}</td>
+                                                    <td class="p-3 text-slate-600">${w.validCount}</td>
+                                                    <td class="p-3 text-slate-600">${w.totalScore} / ${w.maxScore}</td>
+                                                    <td class="p-3 font-bold text-eco-700">${w.percentage}%</td>
+                                                    <td class="p-3">
+                                                        ${w.published ? `<span class="bg-eco-100 text-eco-800 px-2 py-0.5 rounded font-semibold">Published</span>` : `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-semibold">Unpublished</span>`}
+                                                    </td>
+                                                    <td class="p-3 text-right space-x-2">
+                                                        ${w.published ? `
+                                                            <button onclick="app.toggleWeeklyPublish('${w.id}', false)" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-2.5 py-1 rounded font-semibold">Unpublish</button>
+                                                        ` : `
+                                                            <button onclick="app.toggleWeeklyPublish('${w.id}', true)" class="bg-eco-600 hover:bg-eco-700 text-white px-2.5 py-1 rounded font-semibold">Publish</button>
+                                                        `}
+                                                    </td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            `}
+                        </div>
+
+                        <!-- Monthly Rankings Review & Publication -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                            <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center"><i class="fa-solid fa-trophy text-amber-500 mr-2"></i><span>Monthly Rankings Review & Publication</span></h3>
+                            ${currentDb.monthlyResults.length === 0 ? `
+                                <p class="text-xs text-slate-400 py-4">No monthly results computed yet.</p>
+                            ` : `
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left text-xs">
+                                        <thead>
+                                            <tr class="border-b bg-slate-50 text-slate-600 font-semibold">
+                                                <th class="p-3">Rank</th>
+                                                <th class="p-3">Month</th>
+                                                <th class="p-3">Section</th>
+                                                <th class="p-3">Percentage</th>
+                                                <th class="p-3">Status</th>
+                                                <th class="p-3 text-right">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-100">
+                                            ${currentDb.monthlyResults.map(m => `
+                                                <tr>
+                                                    <td class="p-3 font-bold text-slate-900">#${m.rank}</td>
+                                                    <td class="p-3 text-slate-600">${m.monthName}</td>
+                                                    <td class="p-3 font-medium text-slate-900">${m.sectionName}</td>
+                                                    <td class="p-3 font-bold text-eco-700">${m.percentage}%</td>
+                                                    <td class="p-3">
+                                                        ${m.published ? `<span class="bg-eco-100 text-eco-800 px-2 py-0.5 rounded font-semibold">Published</span>` : `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-semibold">Unpublished</span>`}
+                                                    </td>
+                                                    <td class="p-3 text-right space-x-2">
+                                                        ${m.published ? `
+                                                            <button onclick="app.toggleMonthlyPublish('${m.id}', false)" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-2.5 py-1 rounded font-semibold">Unpublish</button>
+                                                        ` : `
+                                                            <button onclick="app.toggleMonthlyPublish('${m.id}', true)" class="bg-eco-600 hover:bg-eco-700 text-white px-2.5 py-1 rounded font-semibold">Publish</button>
+                                                        `}
+                                                    </td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            `}
+                        </div>
+
+                        <!-- Teacher Accounts Management -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                            <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center"><i class="fa-solid fa-users text-eco-600 mr-2"></i><span>Teacher Accounts & Section Assignments (12 Registered Teachers)</span></h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-xs">
+                                    <thead>
+                                        <tr class="border-b bg-slate-50 text-slate-600 font-semibold">
+                                            <th class="p-3">Name</th>
+                                            <th class="p-3">Assigned Section / Role</th>
+                                            <th class="p-3">Special Permissions</th>
+                                            <th class="p-3">Status</th>
+                                            <th class="p-3 text-right">Controls</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        ${currentDb.users.map(u => `
+                                            <tr>
+                                                <td class="p-3 font-medium text-slate-900">${u.name}</td>
+                                                <td class="p-3 text-slate-600">${u.role.toUpperCase()} (${u.sectionId || 'N/A'})</td>
+                                                <td class="p-3">
+                                                    ${u.isJudge ? `<span class="text-amber-700 font-semibold">SHS Judge (11 Amorsolo, 11 Abueva, 12 Hernandez, 12 Balagtas)</span>` : `<span class="text-slate-400">Standard</span>`}
+                                                </td>
+                                                <td class="p-3">
+                                                    ${u.status === 'inactive' ? `<span class="bg-red-100 text-red-800 px-2 py-0.5 rounded font-semibold">Inactive</span>` : `<span class="bg-eco-100 text-eco-800 px-2 py-0.5 rounded font-semibold">Active</span>`}
+                                                </td>
+                                                <td class="p-3 text-right space-x-2">
+                                                    ${u.role !== 'admin' ? `
+                                                        <button onclick="app.toggleUserStatus('${u.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded font-semibold">${u.status === 'inactive' ? 'Activate' : 'Deactivate'}</button>
+                                                    ` : ''}
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Audit Logs -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                            <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center"><i class="fa-solid fa-clipboard-list text-slate-600 mr-2"></i><span>System Audit Logs</span></h3>
+                            <div class="max-h-60 overflow-y-auto border rounded-xl">
+                                <table class="w-full text-left text-xs">
+                                    <thead class="bg-slate-50 sticky top-0">
+                                        <tr>
+                                            <th class="p-3">Timestamp</th>
+                                            <th class="p-3">Actor</th>
+                                            <th class="p-3">Action</th>
+                                            <th class="p-3">Details</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        ${currentDb.auditLogs.map(l => `
+                                            <tr>
+                                                <td class="p-3 text-slate-500">${new Date(l.timestamp).toLocaleString()}</td>
+                                                <td class="p-3 font-semibold text-slate-900">${l.actor}</td>
+                                                <td class="p-3 font-medium text-eco-700">${l.action}</td>
+                                                <td class="p-3 text-slate-600">${l.details}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            computeWeeklyResults() {
+                const currentDb = db.get();
+                currentDb.sections.forEach(sec => {
+                    const secRecords = currentDb.records.filter(r => r.sectionId === sec.id);
+                    if (secRecords.length === 0) return;
+
+                    const totalScoreSum = secRecords.reduce((acc, r) => acc + r.totalScore, 0);
+                    const maxScoreSum = secRecords.length * 100;
+                    const percentage = Math.round((totalScoreSum / maxScoreSum) * 100);
+
+                    const existingWIndex = currentDb.weeklyResults.findIndex(w => w.sectionId === sec.id && w.weekNumber === 1);
+                    const weeklyObj = {
+                        id: existingWIndex >= 0 ? currentDb.weeklyResults[existingWIndex].id : 'week_' + Date.now() + '_' + sec.id,
+                        sectionId: sec.id,
+                        sectionName: sec.name,
+                        weekNumber: 1,
+                        validCount: secRecords.length,
+                        totalScore: totalScoreSum,
+                        maxScore: maxScoreSum,
+                        percentage,
+                        published: existingWIndex >= 0 ? currentDb.weeklyResults[existingWIndex].published : false
+                    };
+
+                    if (existingWIndex >= 0) {
+                        currentDb.weeklyResults[existingWIndex] = weeklyObj;
+                    } else {
+                        currentDb.weeklyResults.push(weeklyObj);
+                    }
+                });
+
+                db.save(currentDb);
+                db.logSystem('Computed Weekly Results', 'PHS Admin');
+                this.showToast('Weekly results successfully computed!', 'success');
+                this.renderAdminDashboard(document.getElementById('main-content'));
+            },
+
+            computeMonthlyResults() {
+                const currentDb = db.get();
+                currentDb.sections.forEach(sec => {
+                    const secWeeks = currentDb.weeklyResults.filter(w => w.sectionId === sec.id);
+                    if (secWeeks.length === 0) return;
+
+                    const avgPercentage = Math.round(secWeeks.reduce((acc, w) => acc + w.percentage, 0) / secWeeks.length);
+
+                    const existingMIndex = currentDb.monthlyResults.findIndex(m => m.sectionId === sec.id && m.monthName === 'September 2026');
+                    const monthlyObj = {
+                        id: existingMIndex >= 0 ? currentDb.monthlyResults[existingMIndex].id : 'month_' + Date.now() + '_' + sec.id,
+                        sectionId: sec.id,
+                        sectionName: sec.name,
+                        monthName: 'September 2026',
+                        percentage: avgPercentage,
+                        rank: 1,
+                        published: existingMIndex >= 0 ? currentDb.monthlyResults[existingMIndex].published : false
+                    };
+
+                    if (existingMIndex >= 0) {
+                        currentDb.monthlyResults[existingMIndex] = monthlyObj;
+                    } else {
+                        currentDb.monthlyResults.push(monthlyObj);
+                    }
+                });
+
+                currentDb.monthlyResults.sort((a, b) => b.percentage - a.percentage);
+                currentDb.monthlyResults.forEach((m, idx) => { m.rank = idx + 1; });
+
+                db.save(currentDb);
+                db.logSystem('Computed Monthly Rankings', 'PHS Admin');
+                this.showToast('Monthly rankings successfully computed!', 'success');
+                this.renderAdminDashboard(document.getElementById('main-content'));
+            },
+
+            toggleWeeklyPublish(id, status) {
+                const currentDb = db.get();
+                const week = currentDb.weeklyResults.find(w => w.id === id);
+                if (week) {
+                    week.published = status;
+                    db.save(currentDb);
+                    db.logSystem(status ? 'Published Weekly Result' : 'Unpublished Weekly Result', 'PHS Admin', `Section: ${week.sectionName}`);
+                    this.showToast(`Weekly result ${status ? 'published' : 'unpublished'} successfully!`, 'success');
+                    this.renderAdminDashboard(document.getElementById('main-content'));
+                }
+            },
+
+            toggleMonthlyPublish(id, status) {
+                const currentDb = db.get();
+                const month = currentDb.monthlyResults.find(m => m.id === id);
+                if (month) {
+                    month.published = status;
+                    db.save(currentDb);
+                    db.logSystem(status ? 'Published Monthly Result' : 'Unpublished Monthly Result', 'PHS Admin', `Section: ${month.sectionName}`);
+                    this.showToast(`Monthly result ${status ? 'published' : 'unpublished'} successfully!`, 'success');
+                    this.renderAdminDashboard(document.getElementById('main-content'));
+                }
+            },
+
+            toggleUserStatus(userId) {
+                const currentDb = db.get();
+                const user = currentDb.users.find(u => u.id === userId);
+                if (user) {
+                    user.status = user.status === 'inactive' ? 'active' : 'inactive';
+                    db.save(currentDb);
+                    db.logSystem('Updated User Account Status', 'PHS Admin', `User: ${user.name}, Status: ${user.status}`);
+                    this.showToast(`User status updated successfully!`, 'success');
+                    this.renderAdminDashboard(document.getElementById('main-content'));
+                }
+            },
+
+            renderHistory(container) {
+                const user = auth.currentUser;
+                const currentDb = db.get();
+
+                let records = currentDb.records;
+                if (user.role !== 'admin') {
+                    if (user.sectionId === 'shs_all') {
+                        records = records.filter(r => r.submitterId === user.id || (user.judgeSections && user.judgeSections.includes(r.sectionId)));
+                    } else {
+                        records = records.filter(r => r.sectionId === user.sectionId);
+                    }
+                }
+
+                container.innerHTML = `
+                    <div class="space-y-6 animate-fade-in">
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex justify-between items-center">
+                            <div>
+                                <h2 class="text-2xl font-bold text-slate-900">Monitoring History</h2>
+                                <p class="text-xs text-slate-500 mt-1">Permanent database records for authorized section: <span class="font-semibold text-slate-700">${user.role === 'admin' ? 'All Sections' : user.sectionId}</span>.</p>
+                            </div>
+                            <button onclick="router.navigate('dashboard')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-xs font-semibold transition"><i class="fa-solid fa-arrow-left mr-1"></i>Back to Dashboard</button>
+                        </div>
+
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                            ${records.length === 0 ? `
+                                <div class="text-center py-12 text-slate-400 text-xs">No historical records found for your account.</div>
+                            ` : `
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left text-xs">
+                                        <thead>
+                                            <tr class="border-b bg-slate-50 text-slate-600 font-semibold">
+                                                <th class="p-3">Date</th>
+                                                <th class="p-3">Section</th>
+                                                <th class="p-3">Submitter</th>
+                                                <th class="p-3">Type</th>
+                                                <th class="p-3">Score</th>
+                                                <th class="p-3">Percentage</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-100">
+                                            ${records.map(r => `
+                                                <tr>
+                                                    <td class="p-3 text-slate-600">${r.date}</td>
+                                                    <td class="p-3 font-medium text-slate-900">${r.sectionName}</td>
+                                                    <td class="p-3 text-slate-600">${r.submitterName}</td>
+                                                    <td class="p-3">${r.isJudgeRecord ? '<span class="text-amber-600 font-semibold">Judge Evaluation</span>' : '<span class="text-eco-600 font-semibold">Teacher Monitoring</span>'}</td>
+                                                    <td class="p-3 text-slate-600">${r.totalScore} / ${r.maxScore}</td>
+                                                    <td class="p-3 font-bold text-eco-700">${r.percentage}%</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                `;
+            }
+        };
+
+        // Initialize App on Load
+        window.addEventListener('DOMContentLoaded', () => {
+            auth.initSession();
+            router.navigate('home');
+        });
+    </script>
+</body>
+</html>
